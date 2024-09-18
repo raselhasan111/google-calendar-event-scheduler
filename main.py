@@ -1,14 +1,15 @@
+import array
 import os
+import json
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.responses import RedirectResponse
 from google.auth.transport.requests import Request
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from dotenv import load_dotenv
 from google_auth_oauthlib.flow import Flow
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -39,6 +40,7 @@ class Event(BaseModel):
     start: dict
     end: dict
     location: Optional[str] = None
+    attendees: Optional[List[str]] = None
 
 
 # In-memory storage for user credentials
@@ -107,7 +109,7 @@ async def create_event(event: Event):
                 'conferenceSolutionKey': {
                     'type': 'hangoutsMeet'
                 },
-                'requestId': '1'
+                'requestId': '1'  # Some random unique string
             }
         }
     }
@@ -116,17 +118,21 @@ async def create_event(event: Event):
                                             body=event_payload, conferenceDataVersion=1).execute()
     return {"event": created_event}
 
-# Example create-event payload
+
+# json payload for creating event, in route '/events', POST request
 # {
-#   "summary": "Tech Talk with Arindam",
-#   "location": "Google Meet",
-#   "description": "Demo event for Arindam's Blog Post.",
-#   "start": {
-#     "dateTime": "2024-03-14T19:30:00+05:30",
-#     "timeZone": "Asia/Kolkata"
-#   },
-#   "end": {
-#     "dateTime": "2024-03-14T20:30:00+05:30",
-#     "timeZone": "Asia/Kolkata"
-#   }
+#     "summary": "Project Kickoff Meeting",
+#     "description": "Discussing the new project with the team.",
+#     "start": {
+#         "dateTime": "2024-09-15T09:00:00-07:00",
+#         "timeZone": "America/Los_Angeles"
+#     },
+#     "end": {
+#         "dateTime": "2024-09-15T10:00:00-07:00",
+#         "timeZone": "America/Los_Angeles"
+#     },
+#     "location": "Google Meet",
+#     "attendees": ["raselhasan.cse11@gmail.com"],
 # }
+#
+# /events?attendees=["raselhasan.cse11@gmail.com"]
